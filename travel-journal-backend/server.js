@@ -74,11 +74,7 @@ app.post('/auth/login', async (req, res) => {
     }
 });
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
-
+// מודל רשומת יומן
 const JournalEntrySchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   title: { type: String, required: true },
@@ -90,6 +86,7 @@ const JournalEntrySchema = new mongoose.Schema({
 
 const JournalEntry = mongoose.model('JournalEntry', JournalEntrySchema);
 
+// אימות JWT
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
@@ -102,7 +99,9 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
-// קבלת כל רשומות היומן של המשתמש (מהחדש לישן)
+// ניהול רשומות יומן - CRUD
+
+// קבלת כל הרשומות של המשתמש (מהחדש לישן)
 app.get('/entries', authenticateToken, async (req, res) => {
   try {
     const entries = await JournalEntry.find({ userId: req.user.userId }).sort({ date: -1 });
@@ -172,4 +171,48 @@ app.delete('/entries/:id', authenticateToken, async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }
+});
+
+
+// --- הוספת העלאת תמונות ל-Cloudinary ---
+
+const multer = require('multer');
+const { v2: cloudinary } = require('cloudinary');
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+
+// הגדרת Cloudinary עם משתנים מה־.env
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME, 
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+// הגדרת storage של multer להשתמש ב־Cloudinary
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'travel-journal-images', // תיקיית אחסון ב־Cloudinary
+    allowed_formats: ['jpg', 'jpeg', 'png', 'gif'],
+  },
+});
+
+const parser = multer({ storage: storage });
+
+// נתיב להעלאת תמונה
+app.post('/upload-image', authenticateToken, parser.single('image'), (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
+
+    // req.file.path זה ה-URL של התמונה ב-Cloudinary
+    res.json({ imageUrl: req.file.path });
+  } catch (error) {
+    res.status(500).json({ message: 'Upload failed', error });
+  }
+});
+
+
+
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
 });
