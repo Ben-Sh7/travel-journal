@@ -2,6 +2,11 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const multer = require('multer');
+const { v2: cloudinary } = require('cloudinary');
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 
 const app = express();
 app.use(cors());
@@ -15,6 +20,24 @@ mongoose.connect(process.env.MONGO_URI, {
 .then(() => console.log('MongoDB connected'))
 .catch((err) => console.log('MongoDB connection error:', err));
 
+// Cloudinary config
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+// Multer storage for Cloudinary
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'travel-journal',
+    allowed_formats: ['jpg', 'jpeg', 'png', 'gif'],
+  },
+});
+
+const parser = multer({ storage });
+
 // מודל משתמש
 const UserSchema = new mongoose.Schema({
     username: { type: String, required: true, unique: true },
@@ -24,56 +47,6 @@ const UserSchema = new mongoose.Schema({
 
 const User = mongoose.model('User', UserSchema);
 
-// רישום משתמש (Sign up)
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-
-app.post('/auth/signup', async (req, res) => {
-    try {
-        const { username, email, password } = req.body;
-        if(!username || !email || !password) {
-            return res.status(400).json({ message: 'Missing fields' });
-        }
-        const existingUser = await User.findOne({ $or: [{username}, {email}] });
-        if(existingUser) {
-            return res.status(400).json({ message: 'Username or Email already in use' });
-        }
-        const salt = await bcrypt.genSalt(10);
-        const passwordHash = await bcrypt.hash(password, salt);
-        const newUser = new User({ username, email, passwordHash });
-        await newUser.save();
-        res.status(201).json({ message: 'User created' });
-    } catch (error) {
-        res.status(500).json({ message: 'Server error' });
-    }
-});
-
-// כניסה (Login)
-app.post('/auth/login', async (req, res) => {
-    try {
-        const { email, password } = req.body;
-        if(!email || !password) {
-            return res.status(400).json({ message: 'Missing email or password' });
-        }
-        const user = await User.findOne({ email });
-        if(!user) {
-            return res.status(400).json({ message: 'Invalid credentials' });
-        }
-        const isMatch = await bcrypt.compare(password, user.passwordHash);
-        if(!isMatch) {
-            return res.status(400).json({ message: 'Invalid credentials' });
-        }
-        const token = jwt.sign(
-            { userId: user._id, username: user.username },
-            process.env.JWT_SECRET,
-            { expiresIn: '1d' }
-        );
-        res.json({ token, username: user.username });
-    } catch (error) {
-        res.status(500).json({ message: 'Server error' });
-    }
-});
-
 // מודל רשומת יומן
 const JournalEntrySchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
@@ -81,12 +54,12 @@ const JournalEntrySchema = new mongoose.Schema({
   content: { type: String, required: true },
   date: { type: Date, required: true },
   location: { type: String },
-  imageUrl: { type: String }
+  imageUrl: { type: String }, // יכול להיות URL ישיר או URL של Cloudinary
 }, { timestamps: true });
 
 const JournalEntry = mongoose.model('JournalEntry', JournalEntrySchema);
 
-// אימות JWT
+// Middleware לאימות JWT
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
@@ -99,9 +72,54 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
-// ניהול רשומות יומן - CRUD
+// רישום משתמש (Signup)
+app.post('/auth/signup', async (req, res) => {
+  try {
+    const { username, email, password } = req.body;
+    if(!username || !email || !password) {
+      return res.status(400).json({ message: 'Missing fields' });
+    }
+    const existingUser = await User.findOne({ $or: [{username}, {email}] });
+    if(existingUser) {
+      return res.status(400).json({ message: 'Username or Email already in use' });
+    }
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash(password, salt);
+    const newUser = new User({ username, email, passwordHash });
+    await newUser.save();
+    res.status(201).json({ message: 'User created' });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
 
-// קבלת כל הרשומות של המשתמש (מהחדש לישן)
+// כניסה (Login)
+app.post('/auth/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if(!email || !password) {
+      return res.status(400).json({ message: 'Missing email or password' });
+    }
+    const user = await User.findOne({ email });
+    if(!user) {
+      return res.status(400).json({ message: 'Invalid credentials' });
+    }
+    const isMatch = await bcrypt.compare(password, user.passwordHash);
+    if(!isMatch) {
+      return res.status(400).json({ message: 'Invalid credentials' });
+    }
+    const token = jwt.sign(
+      { userId: user._id, username: user.username },
+      process.env.JWT_SECRET,
+      { expiresIn: '1d' }
+    );
+    res.json({ token, username: user.username });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// קבלת כל רשומות היומן של המשתמש (מהחדש לישן)
 app.get('/entries', authenticateToken, async (req, res) => {
   try {
     const entries = await JournalEntry.find({ userId: req.user.userId }).sort({ date: -1 });
@@ -111,22 +129,34 @@ app.get('/entries', authenticateToken, async (req, res) => {
   }
 });
 
-// יצירת רשומה חדשה
-app.post('/entries', authenticateToken, async (req, res) => {
+// יצירת רשומה חדשה - אפשרות העלאת תמונה כקובץ או URL
+app.post('/entries', authenticateToken, parser.single('image'), async (req, res) => {
   try {
     const { title, content, date, location, imageUrl } = req.body;
-    if (!title || !content || !date) return res.status(400).json({ message: 'Missing required fields' });
+    if (!title || !content || !date) {
+      return res.status(400).json({ message: 'Missing required fields' });
+    }
+
+    let finalImageUrl = imageUrl || null;
+
+    // אם הגיעה תמונה כקובץ (multer+Cloudinary)
+    if (req.file && req.file.path) {
+      finalImageUrl = req.file.path;
+    }
+
     const newEntry = new JournalEntry({
       userId: req.user.userId,
       title,
       content,
       date,
       location,
-      imageUrl
+      imageUrl: finalImageUrl,
     });
+
     await newEntry.save();
     res.status(201).json(newEntry);
   } catch (error) {
+    console.error('Error creating entry:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -142,8 +172,8 @@ app.get('/entries/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// עדכון רשומה
-app.put('/entries/:id', authenticateToken, async (req, res) => {
+// עדכון רשומה - אפשר לעדכן גם תמונה חדשה (קובץ או URL)
+app.put('/entries/:id', authenticateToken, parser.single('image'), async (req, res) => {
   try {
     const entry = await JournalEntry.findOne({ _id: req.params.id, userId: req.user.userId });
     if (!entry) return res.status(404).json({ message: 'Entry not found' });
@@ -153,11 +183,17 @@ app.put('/entries/:id', authenticateToken, async (req, res) => {
     if (content) entry.content = content;
     if (date) entry.date = date;
     if (location) entry.location = location;
-    if (imageUrl) entry.imageUrl = imageUrl;
+
+    if (req.file && req.file.path) {
+      entry.imageUrl = req.file.path;
+    } else if (imageUrl) {
+      entry.imageUrl = imageUrl;
+    }
 
     await entry.save();
     res.json(entry);
   } catch (error) {
+    console.error('Error updating entry:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -173,46 +209,7 @@ app.delete('/entries/:id', authenticateToken, async (req, res) => {
   }
 });
 
-
-// --- הוספת העלאת תמונות ל-Cloudinary ---
-
-const multer = require('multer');
-const { v2: cloudinary } = require('cloudinary');
-const { CloudinaryStorage } = require('multer-storage-cloudinary');
-
-// הגדרת Cloudinary עם משתנים מה־.env
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME, 
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
-
-// הגדרת storage של multer להשתמש ב־Cloudinary
-const storage = new CloudinaryStorage({
-  cloudinary: cloudinary,
-  params: {
-    folder: 'travel-journal-images', // תיקיית אחסון ב־Cloudinary
-    allowed_formats: ['jpg', 'jpeg', 'png', 'gif'],
-  },
-});
-
-const parser = multer({ storage: storage });
-
-// נתיב להעלאת תמונה
-app.post('/upload-image', authenticateToken, parser.single('image'), (req, res) => {
-  try {
-    if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
-
-    // req.file.path זה ה-URL של התמונה ב-Cloudinary
-    res.json({ imageUrl: req.file.path });
-  } catch (error) {
-    res.status(500).json({ message: 'Upload failed', error });
-  }
-});
-
-
-
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
