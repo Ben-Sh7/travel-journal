@@ -8,45 +8,25 @@ function App() {
   const [token, setTokenState] = useState(null);
   const [mode, setMode] = useState('login');
 
-  // עטיפה של setToken ששומרת ל-localStorage
-  const setToken = (newToken) => {
+  const setToken = newToken => {
     setTokenState(newToken);
-    if (newToken) {
-      localStorage.setItem('token', newToken);
-    } else {
-      localStorage.removeItem('token');
-    }
+    if (newToken) localStorage.setItem('token', newToken);
+    else localStorage.removeItem('token');
   };
 
-  // בטעינת העמוד – ננסה לשלוף טוקן מה־localStorage
   useEffect(() => {
-    const savedToken = localStorage.getItem('token');
-    if (savedToken) {
-      setTokenState(savedToken);
-    }
+    const saved = localStorage.getItem('token');
+    if (saved) setTokenState(saved);
   }, []);
 
-  const handleLogout = () => {
-    setToken(null);
-    setMode('login');
-  };
+  const handleLogout = () => setToken(null);
 
   if (!token) {
     return (
       <div className="p-8">
         <div className="flex gap-4 mb-6">
-          <button
-            onClick={() => setMode('login')}
-            className={`px-4 py-2 rounded ${mode === 'login' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
-          >
-            Login
-          </button>
-          <button
-            onClick={() => setMode('signup')}
-            className={`px-4 py-2 rounded ${mode === 'signup' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
-          >
-            Signup
-          </button>
+          <button onClick={() => setMode('login')} className={mode === 'login' ? 'bg-blue-600 text-white px-4 py-2 rounded' : 'bg-gray-200 px-4 py-2 rounded'}>Login</button>
+          <button onClick={() => setMode('signup')} className={mode === 'signup' ? 'bg-blue-600 text-white px-4 py-2 rounded' : 'bg-gray-200 px-4 py-2 rounded'}>Signup</button>
         </div>
         {mode === 'login' ? <Login onLogin={setToken} /> : <Signup />}
       </div>
