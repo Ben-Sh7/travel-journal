@@ -6,12 +6,21 @@ export default function Dashboard({ token, onLogout }) {
   const [loading,setLoading]=useState(true);
 
   const load = async()=>{
-    const res = await fetch('http://localhost:5000/entries',{headers:{Authorization:`Bearer ${token}` }});
-    setEntries(await res.json()); setLoading(false);
+    try{
+      const res = await fetch('http://localhost:5000/entries',{
+        headers:{ Authorization:`Bearer ${token}` }
+      });
+      if(!res.ok){
+        const txt = await res.text();
+        throw new Error(`HTTP ${res.status}: ${txt}`);
+      }
+      setEntries(await res.json());
+    }catch(e){ alert(e.message); }
+    finally{ setLoading(false); }
   };
-  useEffect(()=>{ load(); },[]);
+  useEffect(()=>{ load(); /* eslint-disable-next-line */},[]);
 
-  const add = e=> setEntries(p=>[e,...p]);
+  const add = e => setEntries(p=>[e,...p]);
   const del = async id=>{
     if(!window.confirm('Delete?')) return;
     await fetch(`http://localhost:5000/entries/${id}`,{
