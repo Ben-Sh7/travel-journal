@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { useOutletContext } from 'react-router-dom';
 
-export default function Login({ onLogin }) {
-  const [form, setForm] = useState({ email: '', password: '' });
+export default function Login() {
+  const { setToken } = useOutletContext();
+  const [form, setForm] = useState({ username: '', password: '' });
   const [err, setErr] = useState('');
 
   const change = e => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
@@ -16,16 +18,16 @@ export default function Login({ onLogin }) {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.msg || data.message || 'Login failed');
-      onLogin(data.token);
+      setToken(data.token);
     } catch (e) {
       setErr(e.message);
     }
   };
 
   return (
-    <form onSubmit={submit} className="flex flex-col gap-2 max-w-md mx-auto p-4 border rounded">
+    <form onSubmit={submit} className="flex flex-col gap-2 max-w-md mx-auto p-4 border rounded mt-8">
       {err && <p className="text-red-500">{err}</p>}
-      <input name="email" value={form.email} onChange={change} placeholder="Email" type="email" required className="border p-2 rounded"/>
+      <input name="username" value={form.username} onChange={change} placeholder="Username" required className="border p-2 rounded"/>
       <input name="password" value={form.password} onChange={change} placeholder="Password" type="password" required className="border p-2 rounded"/>
       <button type="submit" className="bg-blue-600 text-white py-2 rounded">Login</button>
     </form>

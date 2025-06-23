@@ -1,12 +1,11 @@
 import './App.css';
 import { useState, useEffect } from 'react';
-import Login from './components/Login';
-import Signup from './components/Signup';
-import Dashboard from './components/Dashboard';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 
 function App() {
   const [token, setTokenState] = useState(null);
-  const [mode, setMode] = useState('login');
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const setToken = newToken => {
     setTokenState(newToken);
@@ -19,21 +18,18 @@ function App() {
     if (saved) setTokenState(saved);
   }, []);
 
-  const handleLogout = () => setToken(null);
+  const handleLogout = () => {
+    setToken(null);
+    navigate('/login');
+  };
 
-  if (!token) {
-    return (
-      <div className="p-8">
-        <div className="flex gap-4 mb-6">
-          <button onClick={() => setMode('login')} className={mode === 'login' ? 'bg-blue-600 text-white px-4 py-2 rounded' : 'bg-gray-200 px-4 py-2 rounded'}>Login</button>
-          <button onClick={() => setMode('signup')} className={mode === 'signup' ? 'bg-blue-600 text-white px-4 py-2 rounded' : 'bg-gray-200 px-4 py-2 rounded'}>Signup</button>
-        </div>
-        {mode === 'login' ? <Login onLogin={setToken} /> : <Signup />}
-      </div>
-    );
-  }
+  // ניווט אוטומטי לפי סטטוס התחברות
+  useEffect(() => {
+    if (!token && location.pathname !== '/signup') navigate('/login');
+    if (token && location.pathname !== '/dashboard') navigate('/dashboard');
+  }, [token, location.pathname, navigate]);
 
-  return <Dashboard token={token} onLogout={handleLogout} />;
+  return <Outlet context={{ token, setToken, handleLogout }} />;
 }
 
 export default App;
