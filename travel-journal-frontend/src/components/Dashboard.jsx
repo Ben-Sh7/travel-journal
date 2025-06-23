@@ -1,58 +1,86 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import EntryForm from './EntryForm';
 
 export default function Dashboard({ token, onLogout }) {
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const load = async () => {
+  useEffect(() => {
+    fetchEntries();
+  }, []);
+
+  async function fetchEntries() {
     setLoading(true);
+    setError(null);
     try {
       const res = await fetch('http://localhost:5000/entries', {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
+      if (!res.ok) throw new Error('Failed to fetch entries');
       const data = await res.json();
       setEntries(data);
-    } catch (e) {
-      console.error(e);
+    } catch (err) {
+      setError(err.message);
     } finally {
       setLoading(false);
     }
+  }
+
+  const handleNewEntry = (newEntry) => {
+    setEntries(prev => [newEntry, ...prev]);
   };
 
-  useEffect(() => { if (token) load(); }, [token]);
-
-  const add = newEntry => setEntries(prev => [newEntry, ...prev]);
-  const del = async id => {
+  const handleDelete = async (id) => {
     if (!window.confirm('Delete this entry?')) return;
-    await fetch(`http://localhost:5000/entries/${id}`, {
-      method: 'DELETE',
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    setEntries(prev => prev.filter(x => x._id !== id));
+    try {
+      const res = await fetch(`http://localhost:5000/entries/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) setEntries(entries.filter(e => e._id !== id));
+    } catch (err) {
+      alert('Failed to delete entry');
+    }
   };
 
   return (
     <div className="p-4 max-w-3xl mx-auto">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-bold">My Travel Journal</h2>
-        <button onClick={onLogout} className="bg-red-600 text-white px-3 py-1 rounded">Logout</button>
+        <button onClick={onLogout} className="bg-red-600 text-white px-3 py-1 rounded">
+          Logout
+        </button>
       </div>
 
-      <EntryForm token={token} onSuccess={add} />
+      <EntryForm token={token} onSuccess={handleNewEntry} />
 
-      {loading ? 'Loading…' :
-        entries.map(ent => (
-          <div key={ent._id} className="border p-4 my-4 rounded relative shadow">
-            <button onClick={() => del(ent._id)} className="absolute top-2 right-2 text-red-500">✕</button>
-            <h3 className="font-bold text-lg">{ent.title}</h3>
-            <p>{ent.content}</p>
-            <p className="text-sm text-gray-600">{new Date(ent.date).toLocaleDateString()}</p>
-            {ent.location && <p className="text-sm">📍 {ent.location}</p>}
-            {ent.imageUrl && <img src={ent.imageUrl} alt="" className="mt-2 max-h-60 object-cover rounded" />}
-          </div>
-        ))
-      }
+      {loading && <p>Loading…</p>}
+      {error && <p className="text-red-500">{error}</p>}
+
+      {entries.map((entry) => (
+        <div key={entry._id} className="border p-4 my-4 rounded relative">
+          <button
+            onClick={() => handleDelete(entry._id)}
+            className="absolute top-1 right-2 text-red-500"
+            title="Delete entry"
+          >
+            ✕
+          </button>
+          <h3 className="font-bold">{entry.title}</h3>
+          <p>{entry.content}</p>
+          <p className="text-sm text-gray-600">{new Date(entry.date).toLocaleDateString()}</p>
+          {entry.location && <p className="text-sm">📍 {entry.location}</p>}
+          {entry.imageUrl && (
+            <img
+              src={entry.imageUrl}
+              alt=""
+              className="mt-2 max-h-60 object-cover"
+              loading="lazy"
+            />
+          )}
+        </div>
+      ))}
     </div>
   );
 }

@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+
 const multer = require('multer');
 const { v2: cloudinary } = require('cloudinary');
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
@@ -14,12 +15,12 @@ app.use(express.json());
 
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('MongoDB connected'))
-  .catch(err => console.error('Mongo error', err));
+  .catch(e => console.error('Mongo error', e));
 
 const User = mongoose.model('User', new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   email: { type: String, required: true, unique: true },
-  passwordHash: { type: String, required: true }
+  passwordHash: { type: String, required: true },
 }));
 
 const Entry = mongoose.model('Entry', new mongoose.Schema({
@@ -41,10 +42,10 @@ const storage = new CloudinaryStorage({
   cloudinary,
   params: {
     folder: 'travel-journal',
-    allowed_formats: ['jpg', 'jpeg', 'png']
+    resource_type: 'auto', // מאפשר גם תמונות וגם וידאו אם תרצה בעתיד
+    allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp']
   }
 });
-
 const upload = multer({ storage });
 
 function auth(req, res, next) {
@@ -54,45 +55,57 @@ function auth(req, res, next) {
     req.user = jwt.verify(token, process.env.JWT_SECRET);
     next();
   } catch {
-    res.status(403).json({ msg: 'Invalid token' });
+    res.status(403).json({ msg: 'Bad token' });
   }
 }
 
+// --- AUTH ROUTES ---
+
 app.post('/auth/signup', async (req, res) => {
   const { username, email, password } = req.body;
-  if (!username || !email || !password) return res.status(400).json({ msg: 'Missing fields' });
+  if (!username || !email || !password) return res.status(400).json({ msg: 'Missing' });
   if (await User.findOne({ $or: [{ username }, { email }] })) return res.status(400).json({ msg: 'User exists' });
-  const passwordHash = await bcrypt.hash(password, 10);
-  await User.create({ username, email, passwordHash });
+  const hash = await bcrypt.hash(password, 10);
+  await User.create({ username, email, passwordHash: hash });
   res.status(201).json({ msg: 'User created' });
 });
 
 app.post('/auth/login', async (req, res) => {
   const { email, password } = req.body;
   const user = await User.findOne({ email });
-  if (!user || !(await bcrypt.compare(password, user.passwordHash))) return res.status(400).json({ msg: 'Invalid credentials' });
+  if (!user || !(await bcrypt.compare(password, user.passwordHash))) return res.status(400).json({ msg: 'Bad credentials' });
   const token = jwt.sign({ userId: user._id, username: user.username }, process.env.JWT_SECRET, { expiresIn: '1d' });
   res.json({ token });
 });
 
+// --- ENTRIES ---
+  app.post('/entries', auth, upload.single('image'), async (req, res) => {
+  try {
+    const { title, content, date, location, imageUrl } = req.body;
+    if (!title || !content || !date) return res.status(400).json({ msg: 'Missing required fields' });
+
+    const finalUrl = req.file?.path || imageUrl || '';
+    const entry = await Entry.create({
+      userId: req.user.userId,
+      title,
+      content,
+      date,
+      location,
+      imageUrl: finalUrl,
+    });
+
+    res.status(201).json(entry);
+  } catch (error) {
+    console.error('Error in /entries POST:', error);
+    res.status(500).json({ msg: 'Internal server error', error: error.message });
+  }
+});
+
+
+
 app.get('/entries', auth, async (req, res) => {
   const entries = await Entry.find({ userId: req.user.userId }).sort({ date: -1 });
   res.json(entries);
-});
-
-app.post('/entries', auth, upload.single('image'), async (req, res) => {
-  const { title, content, date, location, imageUrl } = req.body;
-  if (!title || !content || !date) return res.status(400).json({ msg: 'Missing fields' });
-  const finalImage = req.file?.path || imageUrl || '';
-  const entry = await Entry.create({
-    userId: req.user.userId,
-    title,
-    content,
-    date,
-    location,
-    imageUrl: finalImage
-  });
-  res.status(201).json(entry);
 });
 
 app.delete('/entries/:id', auth, async (req, res) => {
@@ -100,5 +113,4 @@ app.delete('/entries/:id', auth, async (req, res) => {
   res.sendStatus(204);
 });
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log('Server ready on port', PORT));
+app.listen(process.env.PORT || 5000, () => console.log('Server ready'));
