@@ -123,7 +123,7 @@ export default function Dashboard({ token, trip, onLogout, onBack }) {
                       />
                     )}
                     <div className="flex gap-2 mt-2 w-full">
-                      <button className="bg-yellow-500 text-white px-2 py-1 rounded w-full sm:w-auto" onClick={() => startEdit(entry)}>Edit</button>
+                      <button className="bg-orange-500 text-white px-2 py-1 rounded w-full sm:w-auto" onClick={() => startEdit(entry)}>Edit</button>
                       <button className="bg-red-600 text-white px-2 py-1 rounded w-full sm:w-auto" onClick={() => del(entry._id)}>Delete</button>
                     </div>
                   </>
