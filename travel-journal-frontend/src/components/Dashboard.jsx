@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import EntryForm from './EntryForm';
 
+// Dashboard: מציג את כל הרשומות (Entries) של טיול מסוים, כולל הוספה, עריכה ומחיקה
 export default function Dashboard({ token, trip, onLogout, onBack }) {
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -8,6 +9,7 @@ export default function Dashboard({ token, trip, onLogout, onBack }) {
   const [editForm, setEditForm] = useState({ title: '', content: '', date: '', location: '', imageUrl: '' });
   const [editFile, setEditFile] = useState(null);
 
+  // טוען את כל הרשומות של הטיול מהשרת
   const load = async () => {
     try {
       const res = await fetch(`http://localhost:5000/entries?tripId=${trip._id}`, {
@@ -25,11 +27,13 @@ export default function Dashboard({ token, trip, onLogout, onBack }) {
 
   useEffect(() => {
     load();
-    // eslint-disable-next-line
+    // נטען מחדש בכל החלפת טיול
   }, [trip]);
 
+  // הוספת רשומה חדשה ל-state
   const add = (entry) => setEntries((prev) => [entry, ...prev]);
 
+  // מחיקת רשומה מהשרת ומה-state
   const del = async (id) => {
     if (!window.confirm('Delete this entry?')) return;
     await fetch(`http://localhost:5000/entries/${id}`, {
@@ -39,6 +43,7 @@ export default function Dashboard({ token, trip, onLogout, onBack }) {
     setEntries((prev) => prev.filter((e) => e._id !== id));
   };
 
+  // מעבר למצב עריכה של רשומה
   const startEdit = (entry) => {
     setEditId(entry._id);
     setEditForm({
@@ -51,6 +56,7 @@ export default function Dashboard({ token, trip, onLogout, onBack }) {
     setEditFile(null);
   };
 
+  // שמירת עריכה של רשומה (כולל העלאת קובץ תמונה אם נבחר)
   const saveEdit = async (id) => {
     try {
       const fd = new FormData();
@@ -85,6 +91,7 @@ export default function Dashboard({ token, trip, onLogout, onBack }) {
         </button>
       </div>
       {trip.imageUrl && <img src={trip.imageUrl} alt="" className="mb-4 max-h-48 object-cover rounded w-full" />}
+      {/* טופס הוספת רשומה חדשה */}
       <EntryForm token={token} tripId={trip._id} onSuccess={add} />
       {loading ? (
         <p className="text-gray-500">Loading…</p>
@@ -96,6 +103,7 @@ export default function Dashboard({ token, trip, onLogout, onBack }) {
             .map((entry) => (
               <div key={entry._id} className="border p-4 rounded relative bg-white shadow w-full overflow-x-auto">
                 {editId === entry._id ? (
+                  // מצב עריכה של רשומה
                   <>
                     <input className="border rounded px-2 py-1 mb-2 w-full" value={editForm.title} onChange={e => setEditForm(f => ({ ...f, title: e.target.value }))} />
                     <textarea className="border rounded px-2 py-1 mb-2 w-full" value={editForm.content} onChange={e => setEditForm(f => ({ ...f, content: e.target.value }))} />
@@ -109,8 +117,8 @@ export default function Dashboard({ token, trip, onLogout, onBack }) {
                     </div>
                   </>
                 ) : (
+                  // תצוגה רגילה של רשומה
                   <>
-                    {/* כפתור מחיקה ראשי בלבד, ללא איקס */}
                     <h3 className="font-bold text-lg mb-1 break-words text-red-600">{entry.title}</h3>
                     <p className="mb-2 break-words text-red-600">{entry.content}</p>
                     <p className="text-sm text-red-600">{new Date(entry.date).toLocaleDateString()}</p>
