@@ -19,6 +19,16 @@ const entrySchema = new mongoose.Schema({
   imageUrl: {
     type: String,
   },
-});
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+  },
+  tripId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Trip',
+    required: true,
+  },
+}, { timestamps: true });
 
 module.exports = mongoose.model('Entry', entrySchema);
