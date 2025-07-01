@@ -50,7 +50,7 @@ travel-journal-frontend/
      CLOUDINARY_API_SECRET=...
      ```
 4. **Run the servers**
-   - Backend: `npm start` (regular) or `npx nodemon server.js` (auto-restart on changes)
+   - Backend: `npm start`
    - Frontend: `npm run dev`
 5. **Access the app**
    - Frontend: [http://localhost:5173](http://localhost:5173)
