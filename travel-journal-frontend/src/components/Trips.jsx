@@ -1,21 +1,25 @@
 import { useState, useEffect } from 'react';
 
+// קומפוננטת Trips - מציגה את כל הטיולים של המשתמש
+// מאפשרת הוספה, עריכה, מחיקה ובחירה של טיול, כולל העלאת תמונה
 export default function Trips({ onSelectTrip, onLogout, token }) {
-  const [trips, setTrips] = useState([]);
-  const [form, setForm] = useState({ name: '', date: '', imageUrl: '' });
-  const [file, setFile] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [err, setErr] = useState('');
-
+  // state - משתנים פנימיים
+  const [trips, setTrips] = useState([]); // כל הטיולים
+  const [form, setForm] = useState({ name: '', date: '', imageUrl: '' }); // טופס הוספה
+  const [file, setFile] = useState(null); // קובץ תמונה חדש
+  const [loading, setLoading] = useState(true); // האם בטעינה
+  const [err, setErr] = useState(''); // הודעת שגיאה
   // עריכה
-  const [editId, setEditId] = useState(null);
-  const [editForm, setEditForm] = useState({ name: '', date: '', imageUrl: '' });
-  const [editFile, setEditFile] = useState(null);
+  const [editId, setEditId] = useState(null); // מזהה טיול בעריכה
+  const [editForm, setEditForm] = useState({ name: '', date: '', imageUrl: '' }); // ערכי טופס עריכה
+  const [editFile, setEditFile] = useState(null); // קובץ תמונה בעריכה
 
+  // useEffect - טוען את כל הטיולים מהשרת בעת טעינת הקומפוננטה
   useEffect(() => {
     const load = async () => {
       setLoading(true);
       try {
+        // שליחת בקשת GET לשרת לקבלת כל הטיולים
         const res = await fetch('http://localhost:5000/trips', {
           headers: { Authorization: `Bearer ${token}` }
         });
@@ -31,16 +35,17 @@ export default function Trips({ onSelectTrip, onLogout, token }) {
     load();
   }, [token]);
 
+  // הוספת טיול חדש
   const addTrip = async (e) => {
     e.preventDefault();
     if (!form.name || !form.date) return;
     let imageUrl = form.imageUrl;
     if (file) {
-      // ניתן להעלות לשרת תמונה אמיתית כאן (לשלוח ב-FormData)
-      // כרגע רק תצוגה מקומית
+      // כאן אפשר להעלות קובץ אמיתי לשרת (כרגע רק תצוגה מקומית)
       imageUrl = URL.createObjectURL(file);
     }
     try {
+      // שליחת POST לשרת
       const res = await fetch('http://localhost:5000/trips', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -57,18 +62,21 @@ export default function Trips({ onSelectTrip, onLogout, token }) {
     }
   };
 
+  // מעבר למצב עריכה של טיול
   const startEdit = (trip) => {
     setEditId(trip._id);
     setEditForm({ name: trip.name, date: trip.date.slice(0, 10), imageUrl: trip.imageUrl || '' });
   };
 
+  // שמירת עריכה של טיול
   const saveEdit = async (id) => {
     try {
       let imageUrl = editForm.imageUrl;
       if (editFile) {
-        // תצוגה מקומית בלבד (אם רוצים העלאה אמיתית יש להעלות לשרת)
+        // כאן אפשר להעלות קובץ אמיתי לשרת (כרגע רק תצוגה מקומית)
         imageUrl = URL.createObjectURL(editFile);
       }
+      // שליחת PUT לשרת
       const res = await fetch(`http://localhost:5000/trips/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -84,6 +92,7 @@ export default function Trips({ onSelectTrip, onLogout, token }) {
     }
   };
 
+  // מחיקת טיול
   const deleteTrip = async (id) => {
     if (!window.confirm('Delete this trip?')) return;
     try {
@@ -97,12 +106,15 @@ export default function Trips({ onSelectTrip, onLogout, token }) {
     }
   };
 
+  // JSX - תצוגת הטיולים, טפסים, כפתורים
   return (
     <div className="p-2 sm:p-4 max-w-2xl mx-auto w-full">
+      {/* כותרת הדף וכפתור יציאה */}
       <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-2 sm:gap-0 w-full">
         <h2 className="text-2xl font-bold text-red-600 break-words w-full sm:w-auto">My Trips</h2>
         <button onClick={onLogout} className="bg-red-600 text-white px-3 py-1 rounded w-full sm:w-auto mt-2 sm:mt-0">Logout</button>
       </div>
+      {/* טופס הוספת טיול */}
       <form onSubmit={addTrip} className="mb-6 flex flex-col gap-2 w-full" encType="multipart/form-data">
         <input
           className="border rounded px-2 py-1 w-full"
@@ -136,12 +148,16 @@ export default function Trips({ onSelectTrip, onLogout, token }) {
         />
         <button className="bg-green-600 text-white px-3 py-1 rounded self-start sm:self-auto">Add Trip</button>
       </form>
+      {/* הודעת שגיאה */}
       {err && <p className="text-red-500 mb-2">{err}</p>}
+      {/* הודעת טעינה */}
       {loading ? <p className="text-gray-500">Loading…</p> : (
         <div className="flex flex-col gap-4 w-full">
+          {/* מעבר על כל הטיולים */}
           {trips.map(trip => (
             <div key={trip._id} className="border rounded shadow p-4 bg-white flex flex-col items-center w-full">
               {editId === trip._id ? (
+                // מצב עריכה של טיול
                 <>
                   <input className="border rounded px-2 py-1 mb-2 w-full" value={editForm.name} onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))} />
                   <input className="border rounded px-2 py-1 mb-2 w-full" type="date" value={editForm.date} onChange={e => setEditForm(f => ({ ...f, date: e.target.value }))} />
@@ -153,6 +169,7 @@ export default function Trips({ onSelectTrip, onLogout, token }) {
                   </div>
                 </>
               ) : (
+                // תצוגה רגילה של טיול
                 <>
                   <div className="cursor-pointer w-full" onClick={() => onSelectTrip(trip)}>
                     <h3 className="font-bold text-lg mb-1 text-red-600 underline break-words w-full">{trip.name}</h3>
