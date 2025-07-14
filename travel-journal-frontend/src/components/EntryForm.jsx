@@ -65,20 +65,20 @@ export default function EntryForm({ token, tripId, onSuccess }) {
 
   // JSX - טופס ההוספה בפועל
   return (
-    <form onSubmit={submit} className="space-y-2 w-full max-w-2xl mx-auto" encType="multipart/form-data">
+    <form onSubmit={submit} className="space-y-2 w-full max-w-2xl mx-auto p-2 sm:p-4 md:p-6" encType="multipart/form-data">
       {/* הודעת שגיאה */}
       {err && <p className="text-red-500">{err}</p>}
       {/* שדות הטופס */}
-      <input name="title" value={form.title} onChange={change} placeholder="Title" required className="border p-2 rounded w-full" />
-      <textarea name="content" value={form.content} onChange={change} placeholder="Content" required className="border p-2 rounded w-full" />
-      <input type="date" name="date" value={form.date} onChange={change} required className="border p-2 rounded w-full" />
-      <input name="location" value={form.location} onChange={change} placeholder="Location" className="border p-2 rounded w-full" />
+      <input name="title" value={form.title} onChange={change} placeholder="Title" required className="border p-2 md:p-3 rounded w-full text-base md:text-lg" />
+      <textarea name="content" value={form.content} onChange={change} placeholder="Content" required className="border p-2 md:p-3 rounded w-full text-base md:text-lg" />
+      <input type="date" name="date" value={form.date} onChange={change} required className="border p-2 md:p-3 rounded w-full text-base md:text-lg" />
+      <input name="location" value={form.location} onChange={change} placeholder="Location" className="border p-2 md:p-3 rounded w-full text-base md:text-lg" />
       {/* שדה כתובת תמונה (אם לא נבחר קובץ) */}
-      <input name="imageUrl" value={form.imageUrl} onChange={change} placeholder="Image URL" disabled={!!file} className="border p-2 rounded w-full" />
+      <input name="imageUrl" value={form.imageUrl} onChange={change} placeholder="Image URL" disabled={!!file} className="border p-2 md:p-3 rounded w-full text-base md:text-lg" />
       {/* שדה העלאת קובץ */}
-      <input type="file" accept="image/*" onChange={pick} className="border p-2 rounded w-full" ref={fileInputRef} />
+      <input type="file" accept="image/*" onChange={pick} className="border p-2 md:p-3 rounded w-full text-base md:text-lg" ref={fileInputRef} />
       {/* כפתור שליחה */}
-      <button disabled={loading} className="bg-green-600 text-white px-3 py-1 rounded w-full sm:w-auto">
+      <button disabled={loading} className="bg-green-600 text-white px-3 py-1 md:px-5 md:py-2 rounded w-full sm:w-auto text-base md:text-lg">
         {loading ? 'Saving…' : 'Add Entry'}
       </button>
     </form>

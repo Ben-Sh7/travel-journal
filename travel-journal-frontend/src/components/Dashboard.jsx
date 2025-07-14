@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import EntryForm from './EntryForm';
+import Stickman from './Stickman';
+// ...existing code...
 
 // קומפוננטת Dashboard - מציגה את כל הרשומות (Entries) של טיול מסוים
 // מאפשרת הוספה, עריכה ומחיקה של רשומות, כולל העלאת תמונה
@@ -89,10 +91,12 @@ export default function Dashboard({ token, trip, onLogout, onBack }) {
     }
   };
 
+// ...existing code...
+
   // JSX - מה שמוצג בפועל למשתמש
   return (
     <div className="p-2 sm:p-4 max-w-3xl mx-auto w-full">
-      {/* כותרת הדף, כפתור חזרה, שם הטיול ותאריך */}
+      {/* כותרת הדף, Stickman, וכפתור Logout בשורה אחת */}
       <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-2 sm:gap-0">
         <div className="flex gap-2 items-center w-full sm:w-auto">
           <button onClick={onBack} className="bg-blue-600 text-white px-2 py-1 rounded">Back</button>
@@ -100,10 +104,17 @@ export default function Dashboard({ token, trip, onLogout, onBack }) {
             {trip.name} ({trip.date ? new Date(trip.date).toLocaleDateString() : ''})
           </h2>
         </div>
-        <button onClick={onLogout} className="bg-red-600 text-white px-3 py-1 rounded w-full sm:w-auto mt-2 sm:mt-0">
-          Logout
-        </button>
+        {/* Stickman between title and Logout */}
+        <div className="flex items-center justify-center mx-2">
+          <Stickman />
+        </div>
+        <div className="flex items-center gap-2">
+          <button onClick={onLogout} className="bg-red-600 text-white px-3 py-1 rounded w-full sm:w-auto mt-2 sm:mt-0">
+            Logout
+          </button>
+        </div>
       </div>
+      {/* ...existing code... */}
       {/* תצוגת תמונת הטיול (אם קיימת) */}
       {trip.imageUrl && <img src={trip.imageUrl} alt="" className="mb-4 max-h-48 object-cover rounded w-full" />}
       {/* טופס הוספת רשומה חדשה */}
@@ -118,33 +129,33 @@ export default function Dashboard({ token, trip, onLogout, onBack }) {
             .slice()
             .sort((a, b) => new Date(b.date) - new Date(a.date)) // מיון מהחדשה לישנה
             .map((entry) => (
-              <div key={entry._id} className="border p-4 rounded relative bg-white shadow w-full overflow-x-auto">
+              <div key={entry._id} className="border p-4 md:p-6 rounded relative bg-white shadow w-full overflow-x-auto">
                 {/* אם הרשומה בעריכה - מציג טופס עריכה */}
                 {editId === entry._id ? (
                   // מצב עריכה של רשומה
                   <>
                     {/* שדות עריכה */}
-                    <input className="border rounded px-2 py-1 mb-2 w-full" value={editForm.title} onChange={e => setEditForm(f => ({ ...f, title: e.target.value }))} />
-                    <textarea className="border rounded px-2 py-1 mb-2 w-full" value={editForm.content} onChange={e => setEditForm(f => ({ ...f, content: e.target.value }))} />
-                    <input className="border rounded px-2 py-1 mb-2 w-full" type="date" value={editForm.date} onChange={e => setEditForm(f => ({ ...f, date: e.target.value }))} />
-                    <input className="border rounded px-2 py-1 mb-2 w-full" value={editForm.location} onChange={e => setEditForm(f => ({ ...f, location: e.target.value }))} />
+                    <input className="border rounded px-2 py-1 md:px-3 md:py-2 mb-2 w-full text-base md:text-lg" value={editForm.title} onChange={e => setEditForm(f => ({ ...f, title: e.target.value }))} />
+                    <textarea className="border rounded px-2 py-1 md:px-3 md:py-2 mb-2 w-full text-base md:text-lg" value={editForm.content} onChange={e => setEditForm(f => ({ ...f, content: e.target.value }))} />
+                    <input className="border rounded px-2 py-1 md:px-3 md:py-2 mb-2 w-full text-base md:text-lg" type="date" value={editForm.date} onChange={e => setEditForm(f => ({ ...f, date: e.target.value }))} />
+                    <input className="border rounded px-2 py-1 md:px-3 md:py-2 mb-2 w-full text-base md:text-lg" value={editForm.location} onChange={e => setEditForm(f => ({ ...f, location: e.target.value }))} />
                     {/* שדה כתובת תמונה (אם לא נבחר קובץ) */}
-                    <input className="border rounded px-2 py-1 mb-2 w-full" value={editForm.imageUrl} onChange={e => setEditForm(f => ({ ...f, imageUrl: e.target.value }))} disabled={!!editFile} />
+                    <input className="border rounded px-2 py-1 md:px-3 md:py-2 mb-2 w-full text-base md:text-lg" value={editForm.imageUrl} onChange={e => setEditForm(f => ({ ...f, imageUrl: e.target.value }))} disabled={!!editFile} />
                     {/* שדה העלאת קובץ תמונה */}
-                    <input className="border rounded px-2 py-1 mb-2 w-full" type="file" accept="image/*" onChange={e => { setEditFile(e.target.files[0]); setEditForm(f => ({ ...f, imageUrl: '' })); }} />
+                    <input className="border rounded px-2 py-1 md:px-3 md:py-2 mb-2 w-full text-base md:text-lg" type="file" accept="image/*" onChange={e => { setEditFile(e.target.files[0]); setEditForm(f => ({ ...f, imageUrl: '' })); }} />
                     {/* כפתורי שמירה וביטול */}
-                    <div className="flex gap-2 w-full">
-                      <button className="bg-green-600 text-white px-2 py-1 rounded w-full sm:w-auto" onClick={() => saveEdit(entry._id)}>Save</button>
-                      <button className="bg-gray-400 text-white px-2 py-1 rounded w-full sm:w-auto" onClick={() => { setEditId(null); setEditFile(null); }}>Cancel</button>
+                    <div className="flex flex-col sm:flex-row gap-2 w-full">
+                      <button className="bg-green-600 text-white px-2 py-1 md:px-4 md:py-2 rounded w-full sm:w-auto text-base md:text-lg" onClick={() => saveEdit(entry._id)}>Save</button>
+                      <button className="bg-gray-400 text-white px-2 py-1 md:px-4 md:py-2 rounded w-full sm:w-auto text-base md:text-lg" onClick={() => { setEditId(null); setEditFile(null); }}>Cancel</button>
                     </div>
                   </>
                 ) : (
                   // תצוגה רגילה של רשומה
                   <>
                     {/* כותרת הרשומה */}
-                    <h3 className="font-bold text-lg mb-1 break-words text-red-600">{entry.title}</h3>
+                    <h3 className="font-bold text-lg md:text-xl mb-1 break-words text-red-600">{entry.title}</h3>
                     {/* תוכן הרשומה */}
-                    <p className="mb-2 break-words text-red-600">{entry.content}</p>
+                    <p className="mb-2 break-words text-red-600 text-sm md:text-base">{entry.content}</p>
                     {/* תאריך הרשומה */}
                     <p className="text-sm text-red-600">{new Date(entry.date).toLocaleDateString()}</p>
                     {/* מיקום (אם קיים) */}

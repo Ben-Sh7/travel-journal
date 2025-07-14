@@ -29,14 +29,14 @@ export default function Signup() {
 
   // JSX - טופס הרשמה בפועל
   return (
-    <form onSubmit={submit} className="flex flex-col gap-2 max-w-md mx-auto p-4 border rounded mt-8 w-full">
+    <form onSubmit={submit} className="flex flex-col gap-2 max-w-md mx-auto p-2 sm:p-4 md:p-6 border rounded mt-8 w-full">
       {/* הודעת הצלחה/שגיאה */}
       {msg && <p className={msg.startsWith('Registered') ? 'text-green-500' : 'text-red-500'}>{msg}</p>}
       {/* שדות הטופס */}
-      <input name="username" value={form.username} onChange={change} placeholder="Username" required className="border p-2 rounded w-full"/>
-      <input name="password" value={form.password} onChange={change} placeholder="Password" type="password" required className="border p-2 rounded w-full"/>
+      <input name="username" value={form.username} onChange={change} placeholder="Username" required className="border p-2 md:p-3 rounded w-full text-base md:text-lg"/>
+      <input name="password" value={form.password} onChange={change} placeholder="Password" type="password" required className="border p-2 md:p-3 rounded w-full text-base md:text-lg"/>
       {/* כפתור שליחה */}
-      <button type="submit" className="bg-blue-600 text-white py-2 rounded w-full sm:w-auto">Sign Up</button>
+      <button type="submit" className="bg-blue-600 text-white py-2 md:px-5 md:py-2 rounded w-full sm:w-auto text-base md:text-lg">Sign Up</button>
     </form>
   );
 }
