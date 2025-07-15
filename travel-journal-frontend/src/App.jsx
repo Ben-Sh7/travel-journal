@@ -1,4 +1,4 @@
-import { Routes, Route, useNavigate, Navigate, Link, useLocation } from 'react-router-dom';
+import { Routes, Route, useNavigate, Navigate, Link, useLocation, useParams } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import Login from './components/Login';
 import Signup from './components/Signup';
@@ -52,10 +52,43 @@ function App() {
         </>
       } />
       <Route path="/trips" element={token ? <Trips token={token} onSelectTrip={trip => { setTrip(trip); navigate(`/trips/${trip._id}`); }} onLogout={handleLogout} /> : <Navigate to="/login" />} />
-      <Route path="/trips/:tripId" element={token && trip ? <Dashboard token={token} trip={trip} onLogout={handleLogout} onBack={() => { setTrip(null); navigate('/trips'); }} /> : <Navigate to="/trips" />} />
+      <Route path="/trips/:tripId" element={
+        token ? <TripLoader token={token} trip={trip} setTrip={setTrip} onLogout={handleLogout} /> : <Navigate to="/login" />
+      } />
       <Route path="*" element={<Navigate to={token ? '/trips' : '/login'} />} />
     </Routes>
   );
+
+}
+
+// קומפוננטה חדשה: טוענת trip לפי tripId מה-URL אם צריך
+function TripLoader({ token, trip, setTrip, onLogout }) {
+  const { tripId } = useParams();
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (trip && trip._id === tripId) return;
+    if (!tripId) return;
+    setLoading(true);
+    fetch(`http://localhost:5000/trips`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(res => res.json())
+      .then(data => {
+        const found = Array.isArray(data) ? data.find(t => t._id === tripId) : null;
+        if (found) setTrip(found);
+        else setError('Trip not found');
+      })
+      .catch(() => setError('Failed to load trip'))
+      .finally(() => setLoading(false));
+  }, [tripId, trip, setTrip, token]);
+
+  if (loading) return <div className="text-center mt-10">Loading trip…</div>;
+  if (error) return <div className="text-center text-red-500 mt-10">{error}</div>;
+  if (!trip || trip._id !== tripId) return null;
+  return <Dashboard token={token} trip={trip} onLogout={onLogout} onBack={() => { setTrip(null); navigate('/trips'); }} />;
 }
 
 export default App;

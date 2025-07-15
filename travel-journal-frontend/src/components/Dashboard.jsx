@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import EntryForm from './EntryForm';
-// ...existing code...
+//
 
 // קומפוננטת Dashboard - מציגה את כל הרשומות (Entries) של טיול מסוים
 // מאפשרת הוספה, עריכה ומחיקה של רשומות, כולל העלאת תמונה
@@ -90,12 +90,10 @@ export default function Dashboard({ token, trip, onLogout, onBack }) {
     }
   };
 
-// ...existing code...
-
   // JSX - מה שמוצג בפועל למשתמש
   return (
     <div className="p-2 sm:p-4 max-w-3xl mx-auto w-full">
-      {/* כותרת הדף, Stickman, וכפתור Logout בשורה אחת */}
+      {/* כותרת הדף וכפתור Logout בשורה אחת */}
       <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-2 sm:gap-0">
         <div className="flex gap-2 items-center w-full sm:w-auto">
           <button onClick={onBack} className="bg-blue-600 text-white px-2 py-1 rounded">Back</button>
@@ -103,10 +101,7 @@ export default function Dashboard({ token, trip, onLogout, onBack }) {
             {trip.name} ({trip.date ? new Date(trip.date).toLocaleDateString() : ''})
           </h2>
         </div>
-        {/* Stickman between title and Logout */}
-        <div className="flex items-center justify-center mx-2">
-          <Stickman />
-        </div>
+        {/* ...הוסרו אלמנטים מיותרים... */}
         <div className="flex items-center gap-2">
           <button onClick={onLogout} className="bg-red-600 text-white px-3 py-1 rounded w-full sm:w-auto mt-2 sm:mt-0">
             Logout
@@ -115,7 +110,7 @@ export default function Dashboard({ token, trip, onLogout, onBack }) {
       </div>
       {/* ...existing code... */}
       {/* תצוגת תמונת הטיול (אם קיימת) */}
-      {trip.imageUrl && <img src={trip.imageUrl} alt="" className="mb-4 max-h-48 object-cover rounded w-full" />}
+      {trip.imageUrl && <img src={trip.imageUrl} alt={trip.name} className="mb-4 max-h-48 object-cover rounded w-full" />}
       {/* טופס הוספת רשומה חדשה */}
       <EntryForm token={token} tripId={trip._id} onSuccess={add} />
       {/* הודעת טעינה */}

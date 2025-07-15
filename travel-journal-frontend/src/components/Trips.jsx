@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import leftImg from '../backgroundImages/2020.jpg';
 import rightImg from '../backgroundImages/2021.jpg';
-// ...existing code...
+import DecryptedText from '../styles/DecryptedText';
 
 // קומפוננטת Trips - מציגה את כל הטיולים של המשתמש
 // מאפשרת הוספה, עריכה, מחיקה ובחירה של טיול, כולל העלאת תמונה
@@ -58,10 +58,7 @@ export default function Trips({ onSelectTrip, onLogout, token }) {
       setForm({ name: '', date: '', imageUrl: '' });
       setFile(null);
       setErr('');
-      // מעבר אוטומטי לדשבורד של הטיול החדש
-      if (typeof onSelectTrip === 'function') {
-        onSelectTrip(data);
-      }
+      // לא מבצע מעבר אוטומטי לאלבום החדש
     } catch (e) {
       setErr(e.message);
     }
@@ -129,8 +126,10 @@ export default function Trips({ onSelectTrip, onLogout, token }) {
         <div className="p-2 sm:p-4 md:p-6 max-w-lg md:max-w-xl lg:max-w-2xl mx-auto w-full">
           {/* כותרת הדף וכפתור יציאה */}
           <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-2 sm:gap-0 w-full">
-            <h2 className="text-2xl md:text-3xl font-bold text-red-600 break-words w-full sm:w-auto text-center sm:text-left">My Journy</h2>
-            <button onClick={onLogout} className="bg-red-600 text-white px-3 py-1 md:px-5 md:py-2 rounded w-full sm:w-auto mt-2 sm:mt-0 text-base md:text-lg">Logout</button>
+            <h2 className="text-2xl md:text-3xl font-bold text-red-600 break-words w-full sm:w-auto text-center sm:text-left">
+              <DecryptedText text="My Journy" />
+            </h2>
+            <button onClick={onLogout} className="bg-red-600 text-white px-2 py-0.5 md:px-3.5 md:py-1 rounded w-full sm:w-auto mt-2 sm:mt-0 text-base md:text-lg scale-75">Logout</button>
           </div>
           {/* טופס הוספת טיול */}
           <form onSubmit={addTrip} className="mb-6 flex flex-col items-center gap-2 w-full" encType="multipart/form-data">
@@ -183,9 +182,10 @@ export default function Trips({ onSelectTrip, onLogout, token }) {
                     <input className="border rounded px-2 py-1 md:px-3 md:py-2 mb-2 w-full text-base md:text-lg" type="date" value={editForm.date} onChange={e => setEditForm(f => ({ ...f, date: e.target.value }))} />
                     <input className="border rounded px-2 py-1 md:px-3 md:py-2 mb-2 w-full text-base md:text-lg" value={editForm.imageUrl} onChange={e => setEditForm(f => ({ ...f, imageUrl: e.target.value }))} disabled={!!editFile} />
                     <input className="border rounded px-2 py-1 md:px-3 md:py-2 mb-2 w-full text-base md:text-lg" type="file" accept="image/*" onChange={e => { setEditFile(e.target.files[0]); }} />
-                    <div className="flex flex-col sm:flex-row gap-2 w-full mt-2">
-                      <button className="bg-green-600 text-white px-2 py-1 md:px-4 md:py-2 rounded w-full sm:w-auto text-base md:text-lg" onClick={() => saveEdit(trip._id)}>Save</button>
-                      <button className="bg-gray-400 text-white px-2 py-1 md:px-4 md:py-2 rounded w-full sm:w-auto text-base md:text-lg" onClick={() => { setEditId(null); setEditFile(null); }}>Cancel</button>
+                    <div className="flex flex-col sm:flex-row flex-wrap gap-2 w-full mt-2 items-stretch">
+                      <button className="bg-green-600 text-white px-2 py-0.2 md:px-4 md:py-0.2 rounded flex-1 text-base md:text-lg min-w-[90px]" onClick={() => saveEdit(trip._id)}>Save</button>
+                      <button className="bg-gray-400 text-white px-2 py-0.2 md:px-4 md:py-0.2 rounded flex-1 text-base md:text-lg min-w-[90px]" onClick={() => { setEditId(null); setEditFile(null); }}>Cancel</button>
+                      <button className="bg-red-600 text-white px-2 py-0.2 md:px-4 md:py-0.2 rounded flex-1 text-base md:text-lg min-w-[90px]" onClick={() => deleteTrip(trip._id)}>Delete</button>
                     </div>
                   </>
                   ) : (
@@ -196,11 +196,10 @@ export default function Trips({ onSelectTrip, onLogout, token }) {
                       </div>
                       <p className="text-sm md:text-base text-red-600 w-full">{trip.date ? new Date(trip.date).toLocaleDateString() : ''}</p>
                       {trip.imageUrl && (
-                        <img src={trip.imageUrl} alt="" className="mt-2 max-h-40 md:max-h-60 object-cover rounded border-2 border-red-600 w-full" />
+                        <img src={trip.imageUrl} alt={trip.name} className="mt-2 max-h-40 md:max-h-60 object-cover rounded border-2 border-red-600 w-full" />
                       )}
-                      <div className="flex flex-col sm:flex-row gap-2 mt-2 w-full">
-                        <button className="bg-yellow-500 text-white px-2 py-1 md:px-4 md:py-2 rounded w-full sm:w-auto text-base md:text-lg" onClick={() => startEdit(trip)}>Edit</button>
-                        <button className="bg-red-600 text-white px-2 py-1 md:px-4 md:py-2 rounded w-full sm:w-auto text-base md:text-lg" onClick={() => deleteTrip(trip._id)}>Delete</button>
+                      <div className="flex justify-center mt-6 w-full">
+                        <button className="bg-yellow-500 text-white px-3 py-0.5 rounded text-lg md:text-xl font-bold scale-110 transition-transform duration-200" style={{ width: '70%' }} onClick={() => startEdit(trip)}>Edit</button>
                       </div>
                     </>
                   )}
