@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import EntryForm from './EntryForm';
-import Stickman from './Stickman';
 // ...existing code...
 
 // קומפוננטת Dashboard - מציגה את כל הרשומות (Entries) של טיול מסוים
