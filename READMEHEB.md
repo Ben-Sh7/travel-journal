@@ -70,3 +70,4 @@ travel-journal-frontend/
 ---
 
 לשאלות/הערות: ניתן לפנות למפתח.
+ben & nadav
