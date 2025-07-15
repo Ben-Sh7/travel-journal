@@ -44,11 +44,9 @@ export default function Trips({ onSelectTrip, onLogout, token }) {
     if (!form.name || !form.date) return;
     let imageUrl = form.imageUrl;
     if (file) {
-      // כאן אפשר להעלות קובץ אמיתי לשרת (כרגע רק תצוגה מקומית)
       imageUrl = URL.createObjectURL(file);
     }
     try {
-      // שליחת POST לשרת
       const res = await fetch('http://localhost:5000/trips', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -60,6 +58,10 @@ export default function Trips({ onSelectTrip, onLogout, token }) {
       setForm({ name: '', date: '', imageUrl: '' });
       setFile(null);
       setErr('');
+      // מעבר אוטומטי לדשבורד של הטיול החדש
+      if (typeof onSelectTrip === 'function') {
+        onSelectTrip(data);
+      }
     } catch (e) {
       setErr(e.message);
     }
