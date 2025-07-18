@@ -2,6 +2,7 @@
 
 A full-featured Travel Journal app – React frontend and Node.js/Express backend with MongoDB.
 
+
 ## Main Features
 - **Sign Up & Login** – User management with JWT authentication.
 - **Trips Management** – Add, edit, delete, view trips, including image upload for each trip.
@@ -50,7 +51,7 @@ travel-journal-frontend/
      CLOUDINARY_API_SECRET=...
      ```
 4. **Run the servers**
-   - Backend: `npm start`
+   - Backend: `npm start` (regular run) or `npx nodemon server.js` (auto-restart on changes)
    - Frontend: `npm run dev`
 5. **Access the app**
    - Frontend: [http://localhost:5173](http://localhost:5173)
@@ -61,6 +62,7 @@ travel-journal-frontend/
 - Node.js, Express
 - MongoDB + Mongoose
 - Multer, Cloudinary
+- reactbits.dev (Text Animations/Text Cursor)
 
 ## Notes
 - Each user sees only their own trips and entries.
@@ -69,4 +71,5 @@ travel-journal-frontend/
 
 ---
 
-For questions or feedback, contact the developer.
+For questions or feedback, contact the developers:
+Ben & Nadav

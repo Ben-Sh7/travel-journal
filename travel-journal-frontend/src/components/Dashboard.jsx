@@ -137,10 +137,11 @@ export default function Dashboard({ token, trip, onLogout, onBack }) {
                     <input className="border rounded px-2 py-1 md:px-3 md:py-2 mb-2 w-full text-base md:text-lg" value={editForm.imageUrl} onChange={e => setEditForm(f => ({ ...f, imageUrl: e.target.value }))} disabled={!!editFile} />
                     {/* שדה העלאת קובץ תמונה */}
                     <input className="border rounded px-2 py-1 md:px-3 md:py-2 mb-2 w-full text-base md:text-lg" type="file" accept="image/*" onChange={e => { setEditFile(e.target.files[0]); setEditForm(f => ({ ...f, imageUrl: '' })); }} />
-                    {/* כפתורי שמירה וביטול */}
+                    {/* כפתורי שמירה, ביטול ומחיקה */}
                     <div className="flex flex-col sm:flex-row gap-2 w-full">
                       <button className="bg-green-600 text-white px-2 py-1 md:px-4 md:py-2 rounded w-full sm:w-auto text-base md:text-lg" onClick={() => saveEdit(entry._id)}>Save</button>
                       <button className="bg-gray-400 text-white px-2 py-1 md:px-4 md:py-2 rounded w-full sm:w-auto text-base md:text-lg" onClick={() => { setEditId(null); setEditFile(null); }}>Cancel</button>
+                      <button className="bg-red-600 text-white px-2 py-1 md:px-4 md:py-2 rounded w-full sm:w-auto text-base md:text-lg" onClick={() => del(entry._id)}>Delete</button>
                     </div>
                   </>
                 ) : (
@@ -165,7 +166,6 @@ export default function Dashboard({ token, trip, onLogout, onBack }) {
                     {/* כפתורי עריכה ומחיקה */}
                     <div className="flex gap-2 mt-2 w-full">
                       <button className="bg-orange-500 text-white px-2 py-1 rounded w-full sm:w-auto" onClick={() => startEdit(entry)}>Edit</button>
-                      <button className="bg-red-600 text-white px-2 py-1 rounded w-full sm:w-auto" onClick={() => del(entry._id)}>Delete</button>
                     </div>
                   </>
                 )}

@@ -61,6 +61,7 @@ travel-journal-frontend/
 - Node.js, Express
 - MongoDB + Mongoose
 - Multer, Cloudinary
+- reactbits.dev (אנימציות טקסט/סמן מהבהב)
 
 ## הערות
 - כל משתמש רואה רק את הטיולים והרשומות שלו.
