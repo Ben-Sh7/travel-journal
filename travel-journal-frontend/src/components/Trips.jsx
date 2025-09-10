@@ -127,7 +127,7 @@ export default function Trips({ onSelectTrip, onLogout, token }) {
           {/* כותרת הדף וכפתור יציאה */}
           <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-2 sm:gap-0 w-full">
             <h2 className="text-2xl md:text-3xl font-bold text-red-600 break-words w-full sm:w-auto text-center sm:text-left">
-              <DecryptedText text="My Journy" />
+              <DecryptedText text="My Journey" />
             </h2>
             <button onClick={onLogout} className="bg-red-600 text-white px-2 py-0.5 md:px-3.5 md:py-1 rounded w-full sm:w-auto mt-2 sm:mt-0 text-base md:text-lg scale-75">Logout</button>
           </div>

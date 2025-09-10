@@ -1,32 +1,33 @@
-require('dotenv').config();
-const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
+require('dotenv').config(); //dotenv — טוען משתני סביבה מקובץ .env.
+const express = require('express'); //express — מספק את מסגרת השרת.
+const mongoose = require('mongoose');//mongoose — מאפשר עבודה עם MongoDB.
+const cors = require('cors'); //cors — מאפשר קריאות API מדומיינים שונים.
+const jwt = require('jsonwebtoken'); //jsonwebtoken — יוצר ובודק טוקנים לאימות משתמשים.
+const bcrypt = require('bcryptjs'); //bcryptjs — להצפנת סיסמאות.
 
-// Cloudinary + Multer
+// Cloudinary + Multer 
+//מאפשרים העלאת קבצים (תמונות) ישירות ל-Cloudinary.
 const multer = require('multer');
 const { v2: cloudinary } = require('cloudinary');
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 
 // App & Middleware
 const app = express();
-app.use(cors());
-app.use(express.json());
+app.use(cors()); //מאפשר קריאות מכל דומיין
+app.use(express.json()); //מאפשר קבלת נתונים בפורמט JSON.
 
 // MongoDB connect
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('MongoDB connected'))
-  .catch(err => console.error('Mongo error', err));
+mongoose.connect(process.env.MONGO_URI) // מתחבר למסד הנתונים לפי כתובת ב.env
+  .then(() => console.log('MongoDB connected')) // מדפיס הודעה אם החיבור הצליח
+  .catch(err => console.error('Mongo error', err)); // מדפיס הודעת שגיאה אם החיבור נכשל
 
-// Models
-const User = mongoose.model('User', new mongoose.Schema({
+// Models הגדרת מודלים
+const User = mongoose.model('User', new mongoose.Schema({ //User — משתמשים (שם משתמש, סיסמה מוצפנת).
   username: { type: String, required: true, unique: true },
   passwordHash: { type: String, required: true }
 }));
 
-const Entry = mongoose.model('Entry', new mongoose.Schema({
+const Entry = mongoose.model('Entry', new mongoose.Schema({ //Entry — רשומות יומן (טיול, כותרת, תוכן, תאריך, מיקום, תמונה)
   userId:   { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   title:    { type: String, required: true },
   content:  { type: String, required: true },
@@ -36,7 +37,7 @@ const Entry = mongoose.model('Entry', new mongoose.Schema({
   tripId:   { type: mongoose.Schema.Types.ObjectId, ref: 'Trip' }
 }, { timestamps: true }));
 
-const Trip = mongoose.model('Trip', new mongoose.Schema({
+const Trip = mongoose.model('Trip', new mongoose.Schema({ //Trip — טיולים (שם, תאריך, תמונה).
   userId:   { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   name:     { type: String, required: true },
   date:     { type: Date, required: true },
@@ -44,13 +45,13 @@ const Trip = mongoose.model('Trip', new mongoose.Schema({
 }, { timestamps: true }));
 
 // Cloudinary setup
-cloudinary.config({
+cloudinary.config({ //הגדרות חיבור ל-Cloudinary להעלאת תמונות.
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key:    process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-const storage = new CloudinaryStorage({
+const storage = new CloudinaryStorage({ //התמונות יישמרו בתיקייה travel-journal בקלאודינרי בפורמטים ספציפיים
   cloudinary,
   params: {
     folder: 'travel-journal',
@@ -61,19 +62,19 @@ const storage = new CloudinaryStorage({
 const upload = multer({ storage });
 
 // JWT Middleware
-function auth(req, res, next) {
+function auth(req, res, next) {  // פונקציה שבודקת אם יש  טוקן חוקי בheaders של הבקשה.
   const token = req.headers.authorization?.split(' ')[1];
   if (!token) return res.status(401).json({ msg: 'No token' });
   try {
     req.user = jwt.verify(token, process.env.JWT_SECRET);
     next();
   } catch {
-    res.status(403).json({ msg: 'Invalid token' });
+    res.status(403).json({ msg: 'Invalid token' }); // אם לא מחזירה שגיאה.
   }
 }
 
 // Routes
-app.post('/auth/signup', async (req, res) => {
+app.post('/auth/signup', async (req, res) => { //auth/signup — יצירת משתמש חדש (בודק אם קיים, מצפין סיסמה).
   const { username, password } = req.body;
   if (!username || !password) return res.status(400).json({ msg: 'Missing fields' });
 
@@ -85,7 +86,7 @@ app.post('/auth/signup', async (req, res) => {
   res.status(201).json({ msg: 'User created' });
 });
 
-app.post('/auth/login', async (req, res) => {
+app.post('/auth/login', async (req, res) => { ///auth/login — התחברות (בודק סיסמה, מחזיר טוקן).
   const { username, password } = req.body;
   const user = await User.findOne({ username });
   if (!user || !(await bcrypt.compare(password, user.passwordHash)))
@@ -96,12 +97,12 @@ app.post('/auth/login', async (req, res) => {
 });
 
 // --- TRIPS ROUTES ---
-app.get('/trips', auth, async (req, res) => {
+app.get('/trips', auth, async (req, res) => { //GET /trips — מחזיר את כל הטיולים של המשתמש.
   const trips = await Trip.find({ userId: req.user.userId }).sort({ date: -1 });
   res.json(trips);
 });
 
-app.post('/trips', auth, async (req, res) => {
+app.post('/trips', auth, async (req, res) => { //POST /trips — יוצר טיול חדש.
   const { name, date, imageUrl } = req.body;
   if (!name || !date) return res.status(400).json({ msg: 'Missing required fields' });
   const trip = await Trip.create({
@@ -113,7 +114,7 @@ app.post('/trips', auth, async (req, res) => {
   res.status(201).json(trip);
 });
 
-app.put('/trips/:id', auth, async (req, res) => {
+app.put('/trips/:id', auth, async (req, res) => { //PUT /trips/:id — עדכון טיול.
   const { name, date, imageUrl } = req.body;
   const trip = await Trip.findOneAndUpdate(
     { _id: req.params.id, userId: req.user.userId },
@@ -124,13 +125,13 @@ app.put('/trips/:id', auth, async (req, res) => {
   res.json(trip);
 });
 
-app.delete('/trips/:id', auth, async (req, res) => {
+app.delete('/trips/:id', auth, async (req, res) => { //DELETE /trips/:id — מחיקת טיול
   await Trip.findOneAndDelete({ _id: req.params.id, userId: req.user.userId });
   res.sendStatus(204);
 });
 
 // --- ENTRIES ROUTES ---
-app.get('/entries', auth, async (req, res) => {
+app.get('/entries', auth, async (req, res) => { //GET /entries — מחזיר את כל הרשומות של המשתמש (אפשר לסנן לפי טיול).
   const { tripId } = req.query;
   const filter = { userId: req.user.userId };
   if (tripId) filter.tripId = tripId;
@@ -138,7 +139,7 @@ app.get('/entries', auth, async (req, res) => {
   res.json(entries);
 });
 
-app.post('/entries', auth, upload.single('image'), async (req, res) => {
+app.post('/entries', auth, upload.single('image'), async (req, res) => { //POST /entries — יוצר רשומה חדשה (כולל העלאת תמונה).
   const { title, content, date, location, imageUrl, tripId } = req.body;
   if (!title || !content || !date || !tripId) return res.status(400).json({ msg: 'Missing required fields' });
   const finalImageUrl = req.file?.path || imageUrl || '';
@@ -154,7 +155,7 @@ app.post('/entries', auth, upload.single('image'), async (req, res) => {
   res.status(201).json(entry);
 });
 
-app.put('/entries/:id', auth, upload.single('image'), async (req, res) => {
+app.put('/entries/:id', auth, upload.single('image'), async (req, res) => { //PUT /entries/:id — עדכון רשומה.
   const { title, content, date, location, imageUrl, tripId } = req.body;
   if (!title || !content || !date || !tripId) return res.status(400).json({ msg: 'Missing required fields' });
   const finalImageUrl = req.file?.path || imageUrl || '';
@@ -174,9 +175,10 @@ app.put('/entries/:id', auth, upload.single('image'), async (req, res) => {
   res.json(entry);
 });
 
-app.delete('/entries/:id', auth, async (req, res) => {
+app.delete('/entries/:id', auth, async (req, res) => { //DELETE /entries/:id — מחיקת רשומה.
   await Entry.findOneAndDelete({ _id: req.params.id, userId: req.user.userId });
   res.sendStatus(204);
 });
 
-app.listen(process.env.PORT || 5000, () => console.log('Server ready'));
+app.listen(process.env.PORT || 5000, () => console.log('Server ready')); // מאזין לפורט שמוגדר ב.env או 5000 כברירת מחדל.
+  
